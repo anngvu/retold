@@ -34,16 +34,23 @@
 (defmacro get-enum [range]
   `(map name (keys (get-in enums [(keyword ~range) :permissible_values]))))
 
+(defn ref-object [name-coll]
+  (map (fn [nm] { "@id" (make-class-id nm) }) name-coll))
+
 (defn sms-required [derived m]
   (if (get m :required)
     (assoc derived "sms:required" "sms:true")
     (assoc derived "sms:required" "sms:false")))
 
-; in precedence check for enum_range, then any_of, then range
+(defn expand-union-range
+  "Expand an `any_of` range specification"
+  [any_of]
+  (ref-object (flatten (map #(get-enum (:range %)) any_of))))
+
 (defn sms-range [derived m]
   (cond
-    (get m :enum_range) (assoc derived "sms:rangeIncludes" (m :enum_range))
-    (get m :any_of) (assoc derived "sms:rangeIncludes" (flatten (map #(get-enum (:range %)) (m :any_of))))
+    (get m :enum_range) (assoc derived "sms:rangeIncludes" (ref-object (m :enum_range)))
+    (get m :any_of) (assoc derived "sms:rangeIncludes" (expand-union-range (m :any_of)))
     (get m :range) (assoc derived "sms:rangeIncludes" (get-enum (get m :range)))
     :else (assoc derived "sms:rangeIncludes" "sms:Text")
     ))
@@ -78,6 +85,7 @@
      (map #(as-entity % "enums") enums)
      (merge (map #(as-entity % "slots") (filter-type :slots dm)))
      (merge (map #(as-entity % "classes") (filter-type :classes dm)))
+     (flatten)
      (assoc {"@id" bts} "@graph")
      )))
 
