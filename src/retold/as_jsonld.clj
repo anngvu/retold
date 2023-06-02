@@ -6,6 +6,13 @@
 
 (def default-ns "bts:")
 (def bts "http://schema.biothings.io")
+(def default-context
+  {"@context"
+   {:bts bts
+    :rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    :rdfs "http://www.w3.org/2000/01/rdf-schema#"
+    :schema "http://schema.org"
+    :xsd "http://w3.org/2001/XMLSchema#"}})
 
 (defn make-class-id [s]
   (str default-ns (str/capitalize (re-find #"^." s)) (subs (str/replace s #" " "") 1)))
@@ -24,13 +31,8 @@
       ((first coll) k)
       (reduce #(merge (%1 k) (%2 k)) coll))))
 
-(def default-context
-  {"@context"
-   {:bts bts
-    :rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-    :rdfs "http://www.w3.org/2000/01/rdf-schema#"
-    :schema "http://schema.org"
-    :xsd "http://w3.org/2001/XMLSchema#"}})
+(defn get-enum [range enums]
+  (get-in enums [(keyword range) :permissible_values]))
 
 (defn sms-required [derived m]
   (if (get m :required)
@@ -49,9 +51,6 @@
 (defn sms-requires-component [derived m]
   (assoc derived "sms:requiresComponent" (get-in m [:annotations :requiresComponent])))
 
-(defn get-enum [range enums]
-  (get-in enums [(keyword range) :permissible_values]))
-
 (defn as-entity [entity type]
   (let [label (name (entity 0)) m (val entity)]
     (cond->
@@ -68,7 +67,7 @@
        (= "slots" type) (sms-validation-rules m)
        )))
 
-(defn create-graph [dir]
+(defn map-graph [dir]
   (let [dm (files-into-map (list-files dir))
         enums (filter-type :enums dm)]
     (->>
@@ -78,6 +77,7 @@
      (assoc {"@id" bts} "@graph")
      )))
 
-(def json-file (java.io.File. "model.jsonld"))
-
-(json/write-value json-file (create-graph))
+; opts should be a map { :dir "modules" :outfile "model.jsonld" }
+(defn write-file [opts]
+  (let [graph (map-graph (opts :dir))]
+    (json/generate-stream graph (io/writer "model.jsonld"))))
