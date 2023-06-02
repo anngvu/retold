@@ -6,6 +6,7 @@
 
 (def default-ns "bts:")
 (def bts "http://schema.biothings.io")
+(def enums nil)
 (def default-context
   {"@context"
    {:bts bts
@@ -34,7 +35,7 @@
 (defmacro get-enum [range]
   `(map name (keys (get-in enums [(keyword ~range) :permissible_values]))))
 
-(defn ref-object [name-coll]
+(defn id-refs [name-coll]
   (map (fn [nm] { "@id" (make-class-id nm) }) name-coll))
 
 (defn sms-required [derived m]
@@ -45,14 +46,14 @@
 (defn expand-union-range
   "Expand an `any_of` range specification"
   [any_of]
-  (ref-object (flatten (map #(get-enum (:range %)) any_of))))
+  (id-refs (flatten (map #(get-enum (:range %)) any_of))))
 
 (defn sms-range [derived m]
   (cond
-    (get m :enum_range) (assoc derived "sms:rangeIncludes" (ref-object (m :enum_range)))
+    (get m :enum_range) (assoc derived "sms:rangeIncludes" (id-refs (m :enum_range)))
     (get m :any_of) (assoc derived "sms:rangeIncludes" (expand-union-range (m :any_of)))
-    (get m :range) (assoc derived "sms:rangeIncludes" (get-enum (get m :range)))
-    :else (assoc derived "sms:rangeIncludes" "sms:Text")
+    (get m :range) (assoc derived "sms:rangeIncludes" (id-refs (get-enum (get m :range))))
+    :else (assoc derived "sms:rangeIncludes" '({"@id" "schema:Text"}))
     ))
 
 ; this might do fancier things in the future
