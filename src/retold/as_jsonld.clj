@@ -29,10 +29,10 @@
   (let [coll (filter #(k %) dm)]
     (if (= 1 (count coll))
       ((first coll) k)
-      (reduce #(merge (%1 k) (%2 k)) coll))))
+      ((reduce #(merge-with merge %1 %2) coll) k))))
 
-(defn get-enum [range enums]
-  (get-in enums [(keyword range) :permissible_values]))
+(defmacro get-enum [range]
+  `(map name (keys (get-in enums [(keyword ~range) :permissible_values]))))
 
 (defn sms-required [derived m]
   (if (get m :required)
@@ -80,4 +80,5 @@
 ; opts should be a map { :dir "modules" :outfile "model.jsonld" }
 (defn write-file [opts]
   (let [graph (map-graph (opts :dir))]
+    (print (opts :dir))
     (json/generate-stream graph (io/writer "model.jsonld"))))
