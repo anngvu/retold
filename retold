@@ -17,7 +17,7 @@
         (cli/format-opts {:spec cli-opts}))))
 
 (def table
-  [{:cmds ["as-jsonld"] :fn #(as-jsonld/write-file opts) :spec cli-opts}
+  [{:cmds ["as-jsonld"] :fn #(as-jsonld/write-file (% :opts)) :spec cli-opts}
    ;{:cmds ["as-yaml"] :fn as-yaml/write-file :spec cli-opts}
    {:cmds [] :fn help}])
 
