@@ -6,8 +6,7 @@
 
 (def cli-opts
   {:file     {:alias   :f
-               :desc    "File to translate"
-               :require true}
+              :desc    "File to translate"}
    :dir      {:alias   :d
               :desc    "Directory of files to translate"}})
 
@@ -18,7 +17,7 @@
         (cli/format-opts {:spec cli-opts}))))
 
 (def table
-  [{:cmds ["as-jsonld"] :fn as-jsonld/write-file :spec cli-opts}
+  [{:cmds ["as-jsonld"] :fn #(as-jsonld/write-file opts) :spec cli-opts}
    ;{:cmds ["as-yaml"] :fn as-yaml/translate :spec cli-opts}
    {:cmds [] :fn help}])
 
