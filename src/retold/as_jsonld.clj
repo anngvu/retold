@@ -39,10 +39,14 @@
     (assoc derived "sms:required" "sms:true")
     (assoc derived "sms:required" "sms:false")))
 
+; in precedence check for enum_range, then any_of, then range
 (defn sms-range [derived m]
-  (if (get m :enum_range)
-    (assoc derived "sms:rangeIncludes" (get m :enum_range))
-    (assoc derived "sms:rangeIncludes" (get-enum (get m :range)))))
+  (cond
+    (get m :enum_range) (assoc derived "sms:rangeIncludes" (m :enum_range))
+    (get m :any_of) (assoc derived "sms:rangeIncludes" (flatten (map #(get-enum (:range %)) (m :any_of))))
+    (get m :range) (assoc derived "sms:rangeIncludes" (get-enum (get m :range)))
+    :else (assoc derived "sms:rangeIncludes" "sms:Text")
+    ))
 
 ; this might do fancier things in the future
 (defn sms-validation-rules [derived m]
@@ -80,5 +84,4 @@
 ; opts should be a map { :dir "modules" :outfile "model.jsonld" }
 (defn write-file [opts]
   (let [graph (map-graph (opts :dir))]
-    (print (opts :dir))
     (json/generate-stream graph (io/writer "model.jsonld"))))
