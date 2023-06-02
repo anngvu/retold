@@ -1,0 +1,177 @@
+slots:
+  isStranded:
+    description: Whether or not the library is stranded (Yes; No)
+    required: false
+    annotations:
+      requiresDependency: ''
+      validationRules: ''
+    range: BooleanEnum
+  readPairOrientation:
+    description: The relative orientation of the reads in a paired-end protocol
+    required: false
+    annotations:
+      requiresDependency: ''
+      validationRules: ''
+    range: ReadPairOrientation
+  reporterSubstance:
+    description: A gene which produces an easily assayed phenotype. Often used for expression studies of heterologous promoters.
+    required: false
+    annotations:
+      requiresDependency: ''
+      validationRules: ''
+  reporterGene:
+    description: A biological material (clone, oligo, etc.) on an array which will report on some biosequence or biosequences.
+    required: false
+    annotations:
+      requiresDependency: ''
+      validationRules: ''
+  targetDepth:
+    description: The targeted read depth prior to sequencing.
+    required: false
+    annotations:
+      requiresDependency: ''
+      validationRules: ''
+  libraryPreparationMethod:
+    description: Method by which library was prepared
+    required: false
+    annotations:
+      requiresDependency: ''
+      validationRules: ''
+    range: LibraryPreparationMethod
+  readDepth:
+    description: If available, the coverage statistic as output from bedtools coverage or samtools stats.
+    required: false
+    annotations:
+      requiresDependency: ''
+      validationRules: ''
+  assayTarget:
+    description: The HUGO gene symbol that represents the target analyte assayed.
+    required: false
+    annotations:
+      requiresDependency: ''
+      validationRules: ''
+  readLength:
+    description: Number of base pairs (bp) sequenced for a read
+    required: false
+    annotations:
+      requiresDependency: ''
+      validationRules: ''
+  readStrandOrigin:
+    description: The strand from which the read originates in a strand-specific protocol
+    required: false
+    annotations:
+      requiresDependency: ''
+      validationRules: ''
+    range: ReadStrandOrigin
+  readPair:
+    description: The read of origin
+    required: false
+    annotations:
+      requiresDependency: ''
+      validationRules: int
+    range: ReadPair
+  isPairedEnd:
+    description: (Legacy/deprecated annotation) Whether or not is paired-end sequencing (Yes; No). Note that this can be inferred as 'Yes' when runType=pairedEnd; current templates actually use runType to capture this info.
+    required: false
+    annotations:
+      requiresDependency: ''
+      validationRules: ''
+    range: BooleanEnum
+  targetCaptureKitID:
+    description: A unique identifier for the kit used to construct a genomic library using target capture-based techniques, which should be composed of the vendor name, kit name and kit version.
+    required: false
+    annotations:
+      requiresDependency: ''
+      validationRules: ''
+  nucleicAcidSource:
+    description: Source of the extracted nucleic acid used in the experiment
+    required: false
+    annotations:
+      requiresDependency: ''
+      validationRules: ''
+    range: NucleicAcidSource
+  dissociationMethod:
+    description: Procedure by which a biological specimen is dissociated into individual cells or a cell suspension
+    required: false
+    annotations:
+      requiresDependency: ''
+      validationRules: ''
+    range: DissociationMethod
+  libraryID:
+    description: ''
+    required: false
+    annotations:
+      requiresDependency: ''
+      validationRules: ''
+  immunoAssayType:
+    description: Type of immuno assay
+    required: false
+    annotations:
+      requiresDependency: ''
+      validationRules: ''
+    enum_range:
+    - ChIP-seq
+    - ATAC-seq
+  totalReads:
+    description: If available, the total number of reads collected from samtools.
+    required: false
+    annotations:
+      requiresDependency: ''
+      validationRules: ''
+  drugScreenType:
+    description: String describing general class of drug screen
+    required: false
+    annotations:
+      requiresDependency: ''
+      validationRules: ''
+    enum_range:
+    - singleMolecule
+    - smallMoleculeLibraryScreen
+    - combinationLibraryScreen
+    - combinationScreen
+  proteinExtractSource:
+    description: Source of the extracted protein used in the experiment
+    required: false
+    annotations:
+      requiresDependency: ''
+      validationRules: ''
+    enum_range:
+    - cell lysate
+    - nuclei
+    - mitochondria
+    - cytoplasm
+  libraryPrep:
+    description: The general strategy by which the library was prepared
+    required: false
+    annotations:
+      requiresDependency: libraryPreparationMethod,nucleicAcidSource,dissociationMethod
+      validationRules: ''
+    range: LibraryPrep
+  runType:
+    description: Is the sequencing run single or paired end?
+    required: false
+    annotations:
+      requiresDependency: readPair,isStranded,readPairOrientation,readStrandOrigin,readLength,readDepth
+      validationRules: ''
+    range: RunType
+  assay:
+    description: The technology used to generate the data in this file
+    required: false
+    annotations:
+      requiresDependency: ''
+      validationRules: ''
+    range: Assay
+  MRISequence:
+    description: A mode used in MRI imaging 
+    required: false
+    annotations:
+      requiresDependency: ''
+      validationRules: ''
+    range: MRISequenceType
+  platform:
+    description: A sequencing platform, microscope, spectroscope/plate reader, or other platform for collecting data.
+    required: false
+    annotations:
+      requiresDependency: ''
+      validationRules: ''
+    range: Platform
