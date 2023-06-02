@@ -2,17 +2,13 @@
   (:require [clojure.java.io :as io]
             [clj-yaml.core :as yaml]
             [clojure.string :as str]
-            [jsonista.core :as json]
-            [babashka.cli :as cli]))
+            [cheshire.core :as json]))
 
-(def cli-options {:file {}})
 (def default-ns "bts:")
 (def bts "http://schema.biothings.io")
 
-(def opts (cli/parse-opts *command-line-args* {:spec cli-options}))
-
 (defn make-class-id [s]
-  (str (str/capitalize (re-find #"^." s)) (subs (str/replace s #" " "") 1)))
+  (str default-ns (str/capitalize (re-find #"^." s)) (subs (str/replace s #" " "") 1)))
 
 (defn read-yaml [file]
   (yaml/parse-string (slurp file)))
@@ -22,16 +18,11 @@
 
 (defn files-into-map [files] (mapv read-yaml files))
 
-(defn filter-type [k]
+(defn filter-type [k dm]
   (let [coll (filter #(k %) dm)]
     (if (= 1 (count coll))
       ((first coll) k)
       (reduce #(merge (%1 k) (%2 k)) coll))))
-
-(def dm (files-into-map (list-files "data")))
-(def slots (filter-type :slots))
-(def classes (filter-type :classes))
-(def enums (filter-type :enums))
 
 (def default-context
   {"@context"
@@ -55,33 +46,38 @@
 (defn sms-validation-rules [derived m]
   (assoc derived "sms:validationRules" (get-in m [:annotations :validationRules])))
 
-(defn get-enum [range]
+(defn sms-requires-component [derived m]
+  (assoc derived "sms:requiresComponent" (get-in m [:annotations :requiresComponent])))
+
+(defn get-enum [range enums]
   (get-in enums [(keyword range) :permissible_values]))
 
 (defn as-entity [entity type]
   (let [label (name (entity 0)) m (val entity)]
     (cond->
-      {"@id" (str default-ns (make-class-id label))
+      {"@id" (make-class-id label)
        "@type" (if (= "slots" type) "rdf:Property" "rdfs:Class")
        "rdfs:comment" (m :description)
        "rdfs:label" label
        "rdfs:subClassOf" (into [] (m :subClassOf))
        "schema:isPartOf" {"@id" bts}
        "sms:displayName" label}
-       (= "classes" type) (sms-required m)
-       (= "enums" type) (sms-required m)
+       (= "classes" type) (sms-requires-component m)
+       (= "slots" type) (sms-required m)
        (= "slots" type) (sms-range m)
        (= "slots" type) (sms-validation-rules m)
        )))
 
-(def enum-graph (map #(as-entity % "enums") enums))
-(def prop-graph (map #(as-entity % "slots") slots))
-(def class-graph (map #(as-entity % "classes") classes))
-
-(def graph
-  {"@id" bts
-   "@graph" (merge enum-graph prop-graph class-graph)})
+(defn create-graph [dir]
+  (let [dm (files-into-map (list-files dir))
+        enums (filter-type :enums dm)]
+    (->>
+     (map #(as-entity % "enums") enums)
+     (merge (map #(as-entity % "slots") (filter-type :slots dm)))
+     (merge (map #(as-entity % "classes") (filter-type :classes dm)))
+     (assoc {"@id" bts} "@graph")
+     )))
 
 (def json-file (java.io.File. "model.jsonld"))
 
-(json/write-value json-file graph)
+(json/write-value json-file (create-graph))
