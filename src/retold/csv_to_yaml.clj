@@ -9,6 +9,9 @@
     (let [rows (csv/read-csv reader)]
       (mapv #(zipmap (first rows) %) (rest rows)))))
 
+(defn to-enum-range [derived p]
+  (assoc derived :enum_range (map str/trim (str/split (get p "Valid Values") #","))))
+
 (defn format-prop [p]
   { (keyword (get p "Attribute"))
    (cond->
@@ -17,7 +20,7 @@
         :annotations { :requiresDependency (get p "DependsOn") :validationRules (get p "Validation Rules") }
         }
      (not (str/blank? (get p ".Range"))) (assoc :range (get p ".Range"))
-     (and (str/blank? (get p ".Range")) (not (str/blank? (get p "Valid Values")))) (assoc :enum_range (map str/trim (str/split (get p "Valid Values") #","))))
+     (and (str/blank? (get p ".Range")) (not (str/blank? (get p "Valid Values")))) (to-enum-range p))
    })
 
 (defn format-enum [e]
