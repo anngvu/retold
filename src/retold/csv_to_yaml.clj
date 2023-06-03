@@ -1,14 +1,8 @@
 (ns retold.csv_to_yaml
-  (:require [clojure.data.csv :as csv]
-            [babashka.cli :as cli]))
-
-(def cli-options {:dir {:default "modules"}
-                  :file {}})
-
-(def opts (cli/parse-opts *command-line-args* {:spec cli-options}))
-
-(defn make-class-id [s]
-  (str (str/capitalize (re-find #"^." s)) (subs (str/replace s #" " "") 1)))
+  (:require [clojure.java.io :as io]
+            [clojure.data.csv :as csv]
+            [clojure.string :as str]
+            [clj-yaml.core :as yaml]))
 
 (defn read-terms [file]
   (with-open [reader (io/reader file)]
@@ -58,24 +52,23 @@
    (assoc {:enums nil} :enums)
    ))
 
-
 (defn output-class [classes]
   {:classes (into {} (map #(format-class %) classes))})
 
-(defn add-id [file data]
+(defn add-id [file namespace data]
   (let [name (re-find #"[\w-]+?(?=\.)" file)]
-    (merge {:id (str "https://nf-osi.github.io/nf-metadata-dictionary#" name)
+    (merge {:id (str namespace name)
             :name name
             :default_range "string" } data)))
 
-(defn transform [file]
+(defn transform [file namespace]
   (let [terms (read-terms file)]
     (->>
      (cond
        (= "annotationProperty" (re-find #"annotationProperty" file)) (output-prop terms)
        (= "Template" (re-find #"Template" file)) (output-class terms)
        :else (output-enum terms))
-     ;(add-id file)
+     ;(add-id namespace file)
      )))
 
 (defn process-file! [file]
@@ -86,6 +79,3 @@
   (doseq [file (map str (filter #(.isFile %) (file-seq (io/file dir))))]
     (print (str file "\n"))
     (process-file! file)))
-
-(process-file! (opts :file))
-;(process-dir! (opts :dir))
