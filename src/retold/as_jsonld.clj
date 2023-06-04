@@ -8,7 +8,7 @@
 (def bts "http://schema.biothings.io")
 (def enum-db (atom nil))
 
-(defn graph-into-context [g]
+(defn graph-with-context [g]
   {"@context"
    {:bts bts
     :linkml "https://w3id.org/linkml/"
@@ -32,7 +32,7 @@
   (let [coll (filter #(k %) dm)]
     (if (= 1 (count coll))
       ((first coll) k)
-      ((reduce #(merge-with merge %1 %2) coll) k))))
+      ((apply merge-with merge coll) k))))
 
 (defn get-enum [range]
   (map name (keys (get-in @enum-db [(keyword range) :permissible_values]))))
@@ -58,7 +58,7 @@
 ; this might do fancier things in the future
 (defn derive-slot [derived m]
   (->(sms-range derived m)
-     (assoc "sms:validationRules" (get-in m [:annotations :validationRules]))
+     (assoc "sms:validationRules" (into [] (get-in m [:annotations :validationRules])))
      (assoc "rdfs:subPropertyOf" [])))
 
 (defn derive-class [derived m]
@@ -85,16 +85,18 @@
 (defn graph! [dir]
   (let [dm (dir-to-map dir)
         enums (filter-type :enums dm)
+        vals (apply merge (map #((val %) :permissible_values) enums))
         slots (filter-type :slots dm)
         classes (filter-type :classes dm)]
     (do
       (swap! enum-db merge enums)
       (->>
        (map #(into (sorted-map) (as-entity % "enums")) enums)
+       (merge (map #(into (sorted-map) (as-entity % "vals")) vals))
        (merge (map #(into (sorted-map) (as-entity % "slots")) slots))
        (merge (map #(into (sorted-map) (as-entity % "classes")) classes))
        (flatten)
-       (graph-into-context)))))
+       (graph-with-context)))))
 
 ; opts should be a map { :dir "modules" :out "model.jsonld" }
 (defn write-file [opts]
