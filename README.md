@@ -1,6 +1,13 @@
 # retold
 
-A Clojure library designed to ... well, that part is up to you.
+Experimental Clojure library and CLI tool for translation between different linked data modeling frameworks/formats.
+
+The different frameworks/formats under consideration:
+
+- [Linked Data Modeling Language (LinkML)](https://github.com/linkml/linkml)
+- [schematic](https://github.com/Sage-Bionetworks/schematic/) (schema.org json-ld)
+- [Reasonable Ontology Templates (OTTR)](https://ottr.xyz/)
+
 
 ## Usage
 
