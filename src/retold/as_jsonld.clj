@@ -100,4 +100,4 @@
 
 ; opts should be a map { :dir "modules" :out "model.jsonld" }
 (defn write-file [opts]
-  (json/generate-stream (graph! (opts :dir)) (io/writer (opts :out))))
+  (json/generate-stream (graph! (opts :dir)) (io/writer (opts :out)) {:pretty true}))
