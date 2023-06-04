@@ -7,4 +7,8 @@
   		 [clj-commons/clj-yaml "1.0.26"]
                  [cheshire "5.11.0"]
                  [org.babashka/cli "0.7.51"]]
+  ;:main retold.core
+
+  ;; add AOT compilation
+  :profiles {:uberjar {:aot :all}}
   :repl-options {:init-ns retold.core})
