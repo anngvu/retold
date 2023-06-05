@@ -72,7 +72,7 @@
      (assoc "rdfs:subClassOf" (id-refs (list (get m :is_a ()))))))
 
 (defn derive-enum [derived m]
-  (->(assoc derived "rdfs:subClassOf" [])))
+  (sms-required derived m))
 
 (defn as-entity [entity type]
   (let [label (name (entity 0)) m (val entity)]
@@ -84,7 +84,7 @@
        "schema:isPartOf" {"@id" bts}
        "sms:displayName" label}
       (= "classes" type) (derive-class m)
-      ;(= "enum" type) (derive-enum m)
+      (= "enums" type) (derive-enum m)
       (= "slots" type) (derive-slot m))))
 
 (defn graph! [dir]
