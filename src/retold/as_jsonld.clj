@@ -57,9 +57,10 @@
 
 ; this might do fancier things in the future
 (defn derive-slot [derived m]
-  (->(sms-range derived m)
-     (assoc "sms:validationRules" (into [] (get-in m [:annotations :validationRules])))
-     (assoc "rdfs:subPropertyOf" [])))
+  (let [vrules (get-in m [:annotations :validationRules])]
+    (->(sms-range derived m)
+     (assoc "sms:validationRules" (if (str/blank? vrules) [] (list vrules)))
+     (assoc "rdfs:subPropertyOf" []))))
 
 (defn derive-class [derived m]
   (->(assoc derived "sms:requiresDependency" (id-refs (m :slots)))
