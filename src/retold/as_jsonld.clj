@@ -78,7 +78,7 @@
   (let [label (name (entity 0)) m (val entity)]
     (cond->
       {"@id" (make-id label)
-       "@type" (if (= "slots" type) "linkml:SlotDefinition" "rdfs:Class")
+       "@type" "rdfs:Class";(if (= "slots" type) "linkml:SlotDefinition" "rdfs:Class")
        "rdfs:comment" (get m :description "TBD")
        "rdfs:label" label
        "schema:isPartOf" {"@id" bts}
