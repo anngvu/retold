@@ -53,7 +53,7 @@
     (get m :enum_range) (assoc derived "schema:rangeIncludes" (id-refs (m :enum_range)))
     (get m :any_of) (assoc derived "schema:rangeIncludes" (expand-union-range (m :any_of)))
     (get m :range) (assoc derived "schema:rangeIncludes" (id-refs (get-enum (get m :range))))
-    :else (assoc derived "schema:rangeIncludes" '({"@id" "schema:Text"}))))
+    :else derived))
 
 ; this might do fancier things in the future
 (defn derive-slot [derived m]
