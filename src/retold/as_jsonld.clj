@@ -59,8 +59,8 @@
 (defn derive-slot [derived m]
   (let [vrules (get-in m [:annotations :validationRules])]
     (cond->
-        derived
-        true (sms-range m)
+        (sms-range derived m)
+        true (sms-required m)
         (str/blank? vrules) (assoc "sms:validationRules" [])
         (not (str/blank? vrules)) (assoc "sms:validationRules" (list vrules))
         (get m :domain) (assoc "schema:domainIncludes" { "@id" (make-id (m :domain)) })
