@@ -5,7 +5,7 @@
             [cheshire.core :as json]))
 
 (def default-ns "bts:")
-(def bts "http://schema.biothings.io")
+(def bts "http://schema.biothings.io/")
 (def enum-db (atom nil))
 
 (defn graph-with-context [g]
@@ -14,7 +14,7 @@
     :linkml "https://w3id.org/linkml/"
     :rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
     :rdfs "http://www.w3.org/2000/01/rdf-schema#"
-    :schema "http://schema.org"
+    :schema "http://schema.org/"
     :xsd "http://w3.org/2001/XMLSchema#"}
    "@id" bts
    "@graph" g})
@@ -50,17 +50,21 @@
 
 (defn sms-range [derived m]
   (cond
-    (get m :enum_range) (assoc derived "sms:rangeIncludes" (id-refs (m :enum_range)))
-    (get m :any_of) (assoc derived "sms:rangeIncludes" (expand-union-range (m :any_of)))
-    (get m :range) (assoc derived "sms:rangeIncludes" (id-refs (get-enum (get m :range))))
-    :else (assoc derived "sms:rangeIncludes" '({"@id" "schema:Text"}))))
+    (get m :enum_range) (assoc derived "schema:rangeIncludes" (id-refs (m :enum_range)))
+    (get m :any_of) (assoc derived "schema:rangeIncludes" (expand-union-range (m :any_of)))
+    (get m :range) (assoc derived "schema:rangeIncludes" (id-refs (get-enum (get m :range))))
+    :else (assoc derived "schema:rangeIncludes" '({"@id" "schema:Text"}))))
 
 ; this might do fancier things in the future
 (defn derive-slot [derived m]
   (let [vrules (get-in m [:annotations :validationRules])]
-    (->(sms-range derived m)
-     (assoc "sms:validationRules" (if (str/blank? vrules) [] (list vrules)))
-     (assoc "rdfs:subPropertyOf" []))))
+    (cond->
+        derived
+        true (sms-range m)
+        (str/blank? vrules) (assoc "sms:validationRules" [])
+        (not (str/blank? vrules)) (assoc "sms:validationRules" (list vrules))
+        (get m :domain) (assoc "schema:domainIncludes" { "@id" (make-id (m :domain)) })
+        true (assoc "rdfs:subPropertyOf" []))))
 
 (defn derive-class [derived m]
   (->(assoc derived "sms:requiresDependency" (id-refs (m :slots)))
