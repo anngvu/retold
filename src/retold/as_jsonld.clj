@@ -80,9 +80,10 @@
       {"@id" (make-id label)
        "@type" "rdfs:Class";(if (= "slots" type) "linkml:SlotDefinition" "rdfs:Class")
        "rdfs:comment" (get m :description "TBD")
-       "rdfs:label" label
+       "rdfs:label" (make-id label)
        "schema:isPartOf" {"@id" bts}
        "sms:displayName" label}
+      (= "vals" type) (assoc "sms:required" "sms:false")
       (= "classes" type) (derive-class m)
       (= "enums" type) (derive-enum m)
       (= "slots" type) (derive-slot m))))
