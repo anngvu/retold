@@ -6,7 +6,7 @@
 
 (def default-ns "bts:")
 (def bts "http://schema.biothings.io/")
-(def enum-db (atom nil))
+(def graph (atom nil))
 
 (defn graph-with-context [g]
   {"@context"
@@ -35,7 +35,7 @@
       ((apply merge-with merge coll) k))))
 
 (defn get-enum [range]
-  (map name (keys (get-in @enum-db [(keyword range) :permissible_values]))))
+  (map name (keys (get-in @graph [:enums (keyword range) :permissible_values]))))
 
 (defn id-refs [name-coll]
   (map (fn [nm] { "@id" (make-id nm) }) name-coll))
@@ -48,6 +48,7 @@
 (defn expand-union-range [any_of]
   (id-refs (flatten (map #(get-enum (:range %)) any_of))))
 
+; range allows anonymous inlined enum vals, update graph
 (defn sms-range [derived m]
   (cond
     (get m :enum_range) (assoc derived "schema:rangeIncludes" (id-refs (m :enum_range)))
@@ -55,7 +56,6 @@
     (get m :range) (assoc derived "schema:rangeIncludes" (id-refs (get-enum (get m :range))))
     :else derived))
 
-; this might do fancier things in the future
 (defn derive-slot [derived m]
   (let [vrules (get-in m [:annotations :validationRules])]
     (cond->
@@ -95,7 +95,7 @@
         slots (filter-type :slots dm)
         classes (filter-type :classes dm)]
     (do
-      (swap! enum-db merge enums)
+      (swap! graph merge {:enums enums :vals vals :slots slots :classes classes})
       (->>
        (map #(into (sorted-map) (as-entity % "enums")) enums)
        (merge (map #(into (sorted-map) (as-entity % "vals")) vals))
