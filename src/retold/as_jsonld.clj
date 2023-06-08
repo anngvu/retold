@@ -80,7 +80,7 @@
       {"@id" (make-id label)
        "@type" "rdfs:Class";(if (= "slots" type) "linkml:SlotDefinition" "rdfs:Class")
        "rdfs:comment" (get m :description "TBD")
-       "rdfs:label" (make-id label)
+       "rdfs:label" (str/replace label #" " "")
        "schema:isPartOf" {"@id" bts}
        "sms:displayName" label}
       (= "vals" type) (assoc "sms:required" "sms:false")
