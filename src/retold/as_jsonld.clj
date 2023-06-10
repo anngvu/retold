@@ -68,7 +68,7 @@
      "sms:displayName" (name k)
      "sms:required" "sms:false"}))
       
-(defmulti derive-entity (fn [entity] (get (val entity) :type)))
+(defmulti derive-entity (fn [entity] (let [[_ props] entity] (get props :type))))
 
 (defmethod derive-entity :default [entity] (base-entity entity))
 
@@ -85,18 +85,22 @@
        (sms-required entity)
        (assoc "sms:validationRules" valrules))))
 
-(defn new-graph "Create graph given source directory, realizing vals as needed"
+(defn to-vals [g]
+  (->>(apply merge (map #((val %) :permissible_values) (g :enums)))
+      (map (fn [m] (let [[k v] m] [(name k) v]))))) ; deal w/ spaces in vals
+
+(defn graph-map "Create graph given source directory, realizing vals as needed"
   [dir]
-  (let [g (dir-to-map dir)
-        vals (apply merge (map #((val %) :permissible_values) (g :enums)))
-        ext-vals (mapcat #((val %) :enum_range) (g :slots))
-        key-ext-vals (remove #(contains? vals %) (map keyword ext-vals))]
-    (assoc g :vals vals)))
+  (let [g (dir-to-map dir) vals (to-vals g)]
+    (->>(clojure.set/difference (set (mapcat #((val %) :enum_range) (g :slots))) (set (mapv first vals)))
+        (map (fn [v] [v {}]))
+        (into vals)
+        (assoc g :vals))))
 
 (defn output-graph [g] (with-context (map derive-entity (mapcat val g))))
 
 (defn write-file [opts]
   (let [{:keys [dir out]} opts]
-    (swap! graph merge (new-graph dir))
+    (swap! graph merge (graph-map dir))
     (json/generate-stream (output-graph @graph) (io/writer out) {:pretty true})
     (println (str "Exported to " out "!"))))
