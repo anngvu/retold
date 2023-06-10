@@ -64,6 +64,7 @@
      "@type" "rdfs:Class"
      "rdfs:comment" (get props :description "TBD")
      "rdfs:label" (str/replace (name k) #" " "")
+     "rdfs:subClassOf" ()
      "schema:isPartOf" {"@id" bts}
      "sms:displayName" (name k)
      "sms:required" "sms:false"}))
@@ -73,9 +74,11 @@
 (defmethod derive-entity :default [entity] (base-entity entity))
 
 (defmethod derive-entity :class [entity]
-  (->(base-entity entity)
-     (assoc "sms:requiresDependency" (id-refs (get entity :slots)))
-     (assoc "sms:requiresComponent" (get-in entity [:annotations :requiresComponent]))))
+  (let [[_ props] entity]
+    (->(base-entity entity)
+       (assoc "sms:requiresDependency" (id-refs (get props :slots)))
+       (assoc "sms:requiresComponent" (get-in props [:annotations :requiresComponent]))
+       (assoc "rdfs:subClassOf" (id-refs (if-let [subclass (get props :is_a)] (list subclass) ()))))))
 
 ; TODO When schematic bug is fixed, override "@type" with "rdf:Property"
 (defmethod derive-entity :slot [entity]
