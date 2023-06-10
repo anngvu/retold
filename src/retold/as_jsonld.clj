@@ -8,7 +8,7 @@
 (def bts "http://schema.biothings.io/")
 (def graph (atom nil))
 
-(defn graph-with-context [g]
+(defn with-context [g]
   {"@context"
    {:bts bts
     :linkml "https://w3id.org/linkml/"
@@ -19,20 +19,23 @@
    "@id" bts
    "@graph" g})
 
-(defn make-id [s]
-  (str default-ns (str/replace s #" " "")))
+(def thing {:classes :class :enums :enum :slots :slot})
+
+(defn make-id [s] (str default-ns (str/replace s #" " "")))
 
 (defn read-yaml [file] (yaml/parse-string (slurp file)))
 
 (defn list-files [dir] (map str (filter #(.isFile %) (file-seq (io/file dir)))))
 
-(defn dir-to-map [dir] (mapv read-yaml (list-files dir)))
+(defn type-children "Add type to a collection of child entities"
+  [children type]
+  (reduce-kv (fn [m k v] (assoc m k (assoc v :type type))) {} children))
 
-(defn filter-type [k dm]
-  (let [coll (filter #(k %) dm)]
-    (if (= 1 (count coll))
-      ((first coll) k)
-      ((apply merge-with merge coll) k))))
+(defn dir-to-map [dir]
+  (->>(mapv read-yaml (list-files dir))
+      (apply merge-with merge)
+      (reduce-kv (fn [m k v] (assoc m k (type-children v (k thing)))) {})))
+
 
 (defn get-enum [range]
   (map name (keys (get-in @graph [:enums (keyword range) :permissible_values]))))
@@ -40,71 +43,65 @@
 (defn id-refs [name-coll]
   (map (fn [nm] { "@id" (make-id nm) }) name-coll))
 
-(defn sms-required [derived m]
-  (if (get m :required)
-    (assoc derived "sms:required" "sms:true")
-    (assoc derived "sms:required" "sms:false")))
+(defn sms-required [derived entity]
+  (let [[_ props] entity]
+    (if (get props :required)
+      (assoc derived "sms:required" "sms:true") (assoc derived "sms:required" "sms:false"))))
 
 (defn expand-union-range [any_of]
   (id-refs (flatten (map #(get-enum (:range %)) any_of))))
 
-; range allows anonymous inlined enum vals, update graph
-(defn sms-range [derived m]
-  (cond
-    (get m :enum_range) (assoc derived "schema:rangeIncludes" (id-refs (m :enum_range)))
-    (get m :any_of) (assoc derived "schema:rangeIncludes" (expand-union-range (m :any_of)))
-    (get m :range) (assoc derived "schema:rangeIncludes" (id-refs (get-enum (get m :range))))
-    :else derived))
+(defn add-vals! [labels]
+  (swap! graph update :vals assoc :test [])
+  (println "Added test")
+  (id-refs labels))
 
-(defn derive-slot [derived m]
-  (let [vrules (get-in m [:annotations :validationRules])]
-    (cond->
-        (sms-range derived m)
-        true (sms-required m)
-        (str/blank? vrules) (assoc "sms:validationRules" [])
-        (not (str/blank? vrules)) (assoc "sms:validationRules" (list vrules))
-        (get m :domain) (assoc "schema:domainIncludes" { "@id" (make-id (m :domain)) })
-        true (assoc "rdfs:subPropertyOf" []))))
+; range allows inlined enum vals, which are added to graph
+(defn sms-range [derived entity]
+  (let [[_ props] entity]
+    (cond
+      (get props :enum_range) (assoc derived "schema:rangeIncludes" (add-vals! (props :enum_range)))
+      (get props :any_of) (assoc derived "schema:rangeIncludes" (expand-union-range (props :any_of)))
+      (get props :range) (assoc derived "schema:rangeIncludes" (id-refs (get-enum (props :range))))
+      :else derived)))
 
-(defn derive-class [derived m]
-  (->(assoc derived "sms:requiresDependency" (id-refs (m :slots)))
-     (assoc "sms:requiresComponent" (get-in m [:annotations :requiresComponent]))
-     (assoc "rdfs:subClassOf" (id-refs (list (get m :is_a ()))))))
+(defn base-entity [entity]
+  (let [[k props] entity]
+    {"@id" (make-id (name k))
+     "@type" "rdfs:Class"
+     "rdfs:comment" (get props :description "TBD")
+     "rdfs:label" (str/replace (name k) #" " "")
+     "schema:isPartOf" {"@id" bts}
+     "sms:displayName" (name k)
+     "sms:required" "sms:false"}))
+      
+(defmulti derive-entity (fn [entity] (get (val entity) :type)))
 
-(defn derive-enum [derived m]
-  (sms-required derived m))
+(defmethod derive-entity :default [entity] (base-entity entity))
 
-(defn as-entity [entity type]
-  (let [label (name (entity 0)) m (val entity)]
-    (cond->
-      {"@id" (make-id label)
-       "@type" "rdfs:Class";(if (= "slots" type) "linkml:SlotDefinition" "rdfs:Class")
-       "rdfs:comment" (get m :description "TBD")
-       "rdfs:label" (str/replace label #" " "")
-       "schema:isPartOf" {"@id" bts}
-       "sms:displayName" label}
-      (= "vals" type) (assoc "sms:required" "sms:false")
-      (= "classes" type) (derive-class m)
-      (= "enums" type) (derive-enum m)
-      (= "slots" type) (derive-slot m))))
+(defmethod derive-entity :class [entity]
+  (->(base-entity entity)
+     (assoc "sms:requiresDependency" (id-refs (get entity :slots)))
+     (assoc "sms:requiresComponent" (get-in entity [:annotations :requiresComponent]))))
 
-(defn graph! [dir]
-  (let [dm (dir-to-map dir)
-        enums (filter-type :enums dm)
-        vals (apply merge (map #((val %) :permissible_values) enums))
-        slots (filter-type :slots dm)
-        classes (filter-type :classes dm)]
-    (do
-      (swap! graph merge {:enums enums :vals vals :slots slots :classes classes})
-      (->>
-       (map #(into (sorted-map) (as-entity % "enums")) enums)
-       (merge (map #(into (sorted-map) (as-entity % "vals")) vals))
-       (merge (map #(into (sorted-map) (as-entity % "slots")) slots))
-       (merge (map #(into (sorted-map) (as-entity % "classes")) classes))
-       (flatten)
-       (graph-with-context)))))
+; TODO When schematic bug is fixed, override "@type" with "rdf:Property"
+(defmethod derive-entity :slot [entity]
+  (let [valrules (get-in entity [:annotations :validationRules] [])]
+    (->(base-entity entity)
+       (sms-range entity)
+       (sms-required entity)
+       (assoc "sms:validationRules" valrules))))
 
-; opts should be a map { :dir "modules" :out "model.jsonld" }
+(defn swap-graph! [dir]
+  (let [g (dir-to-map dir)
+        vals (apply merge (map #((val %) :permissible_values) (g :enums)))]
+    (swap! graph merge (assoc g :vals vals))))
+
+(defn derive-graph [g]
+  (with-context (map derive-entity (mapcat val g))))
+
 (defn write-file [opts]
-  (json/generate-stream (graph! (opts :dir)) (io/writer (opts :out)) {:pretty true})
-  (println "Exported " (opts :out)))
+  (let [{:keys [dir out]} opts]
+    (swap-graph! dir)
+    (json/generate-stream (derive-graph @graph) (io/writer out) {:pretty true})
+    (println (str "Exported to " out "!"))))
