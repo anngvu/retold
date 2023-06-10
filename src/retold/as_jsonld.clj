@@ -19,7 +19,7 @@
    "@id" bts
    "@graph" g})
 
-(def thing {:classes :class :enums :enum :slots :slot})
+(def typemap {:classes :class :enums :enum :slots :slot})
 
 (defn make-id [s] (str default-ns (str/replace s #" " "")))
 
@@ -34,8 +34,7 @@
 (defn dir-to-map [dir]
   (->>(mapv read-yaml (list-files dir))
       (apply merge-with merge)
-      (reduce-kv (fn [m k v] (assoc m k (type-children v (k thing)))) {})))
-
+      (reduce-kv (fn [m k v] (assoc m k (type-children v (k typemap)))) {})))
 
 (defn get-enum [range]
   (map name (keys (get-in @graph [:enums (keyword range) :permissible_values]))))
@@ -51,16 +50,10 @@
 (defn expand-union-range [any_of]
   (id-refs (flatten (map #(get-enum (:range %)) any_of))))
 
-(defn add-vals! [labels]
-  (swap! graph update :vals assoc :test [])
-  (println "Added test")
-  (id-refs labels))
-
-; range allows inlined enum vals, which are added to graph
 (defn sms-range [derived entity]
   (let [[_ props] entity]
     (cond
-      (get props :enum_range) (assoc derived "schema:rangeIncludes" (add-vals! (props :enum_range)))
+      (get props :enum_range) (assoc derived "schema:rangeIncludes" (id-refs (props :enum_range)))
       (get props :any_of) (assoc derived "schema:rangeIncludes" (expand-union-range (props :any_of)))
       (get props :range) (assoc derived "schema:rangeIncludes" (id-refs (get-enum (props :range))))
       :else derived)))
@@ -92,16 +85,18 @@
        (sms-required entity)
        (assoc "sms:validationRules" valrules))))
 
-(defn swap-graph! [dir]
+(defn new-graph "Create graph given source directory, realizing vals as needed"
+  [dir]
   (let [g (dir-to-map dir)
-        vals (apply merge (map #((val %) :permissible_values) (g :enums)))]
-    (swap! graph merge (assoc g :vals vals))))
+        vals (apply merge (map #((val %) :permissible_values) (g :enums)))
+        ext-vals (mapcat #((val %) :enum_range) (g :slots))
+        key-ext-vals (remove #(contains? vals %) (map keyword ext-vals))]
+    (assoc g :vals vals)))
 
-(defn derive-graph [g]
-  (with-context (map derive-entity (mapcat val g))))
+(defn output-graph [g] (with-context (map derive-entity (mapcat val g))))
 
 (defn write-file [opts]
   (let [{:keys [dir out]} opts]
-    (swap-graph! dir)
-    (json/generate-stream (derive-graph @graph) (io/writer out) {:pretty true})
+    (swap! graph merge (new-graph dir))
+    (json/generate-stream (output-graph @graph) (io/writer out) {:pretty true})
     (println (str "Exported to " out "!"))))
