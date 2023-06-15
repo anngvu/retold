@@ -2,7 +2,8 @@
   (:require [clojure.java.io :as io]
             [clj-yaml.core :as yaml]
             [clojure.string :as str]
-            [cheshire.core :as json]))
+            [cheshire.core :as json]
+            [clojure.set :as cset]))
 
 (def default-ns "bts:")
 (def bts "http://schema.biothings.io/")
@@ -58,6 +59,11 @@
       (get props :range) (assoc derived "schema:rangeIncludes" (id-refs (get-enum (props :range))))
       :else derived)))
 
+(defn sms-deps [derived entity]
+  (let [[_ props] entity
+        deps (get-in props [:annotations :requiresDependency])]
+    (if deps (assoc derived "sms:requiresDependency" (id-refs (str/split deps #","))) derived)))
+
 (defn base-entity [entity]
   (let [[k props] entity]
     {"@id" (make-id (name k))
@@ -86,6 +92,7 @@
     (->(base-entity entity)
        (sms-range entity)
        (sms-required entity)
+       (sms-deps entity)
        (assoc "sms:validationRules" valrules))))
 
 (defn to-vals [g]
@@ -95,7 +102,7 @@
 (defn graph-map "Create graph given source directory, realizing vals as needed"
   [dir]
   (let [g (dir-to-map dir) vals (to-vals g)]
-    (->>(clojure.set/difference (set (mapcat #((val %) :enum_range) (g :slots))) (set (mapv first vals)))
+    (->>(cset/difference (set (mapcat #((val %) :enum_range) (g :slots))) (set (mapv first vals)))
         (map (fn [v] [v {}]))
         (into vals)
         (assoc g :vals))))
