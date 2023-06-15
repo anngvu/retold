@@ -59,6 +59,11 @@
       (get props :range) (assoc derived "schema:rangeIncludes" (id-refs (get-enum (props :range))))
       :else derived)))
 
+(defn sms-deps [derived entity]
+  (let [[_ props] entity
+        deps (get-in props [:annotations :requiresDependency])]
+    (if deps (assoc derived "sms:requiresDependency" (id-refs (str/split deps #","))) derived)))
+
 (defn base-entity [entity]
   (let [[k props] entity]
     {"@id" (make-id (name k))
@@ -87,6 +92,7 @@
     (->(base-entity entity)
        (sms-range entity)
        (sms-required entity)
+       (sms-deps entity)
        (assoc "sms:validationRules" valrules))))
 
 (defn to-vals [g]
