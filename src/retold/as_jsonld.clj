@@ -2,7 +2,8 @@
   (:require [clojure.java.io :as io]
             [clj-yaml.core :as yaml]
             [clojure.string :as str]
-            [cheshire.core :as json]))
+            [cheshire.core :as json]
+            [clojure.set :as cset]))
 
 (def default-ns "bts:")
 (def bts "http://schema.biothings.io/")
@@ -95,7 +96,7 @@
 (defn graph-map "Create graph given source directory, realizing vals as needed"
   [dir]
   (let [g (dir-to-map dir) vals (to-vals g)]
-    (->>(clojure.set/difference (set (mapcat #((val %) :enum_range) (g :slots))) (set (mapv first vals)))
+    (->>(cset/difference (set (mapcat #((val %) :enum_range) (g :slots))) (set (mapv first vals)))
         (map (fn [v] [v {}]))
         (into vals)
         (assoc g :vals))))
