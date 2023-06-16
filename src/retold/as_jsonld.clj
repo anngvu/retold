@@ -69,6 +69,11 @@
         deps (get-in props [:annotations :requiresDependency])]
     (if deps (assoc derived "sms:requiresDependency" (id-refs (str/split deps #","))) derived)))
 
+(defn sms-rules [derived entity]
+  (let [[_ props] entity]
+    (if-let [rules (get-in props [:annotations :validationRules])]
+      (assoc derived "sms:validationRules" rules) derived)))
+
 (defn base-entity [entity]
   (let [[k props] entity]
     {"@id" (make-id (name k))
@@ -93,12 +98,11 @@
 
 ; TODO When schematic bug is fixed, override "@type" with "rdf:Property"
 (defmethod derive-entity :slot [entity]
-  (let [valrules (get-in entity [:annotations :validationRules] [])]
-    (->(base-entity entity)
-       (sms-range entity)
-       (sms-required entity)
-       (sms-deps entity)
-       (assoc "sms:validationRules" valrules))))
+  (->(base-entity entity)
+     (sms-range entity)
+     (sms-required entity)
+     (sms-deps entity)
+     (sms-rules entity)))
 
 (defn to-vals [g]
   (->>(apply merge (map #((val %) :permissible_values) (g :enums)))
