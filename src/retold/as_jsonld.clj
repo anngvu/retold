@@ -72,7 +72,7 @@
 (defn sms-rules [derived entity]
   (let [[_ props] entity]
     (if-let [rules (get-in props [:annotations :validationRules])]
-      (assoc derived "sms:validationRules" rules) derived)))
+      (assoc derived "sms:validationRules" (list rules)) derived)))
 
 (defn base-entity [entity]
   (let [[k props] entity]
