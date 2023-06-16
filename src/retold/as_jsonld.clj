@@ -24,7 +24,12 @@
 
 (defn make-id [s] (str default-ns (str/replace s #" " "")))
 
-(defn read-yaml [file] (yaml/parse-string (slurp file)))
+; Be careful with key entries that include "/"
+(defn key-fn [x]
+  (let [k (x :key)]
+    (if (str/includes? k "/") k (keyword k))))
+
+(defn read-yaml [file] (yaml/parse-string (slurp file) :key-fn key-fn))
 
 (defn list-files [dir] (map str (filter #(.isFile %) (file-seq (io/file dir)))))
 
