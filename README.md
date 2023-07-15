@@ -1,4 +1,4 @@
-# retold
+# retold (retelling of linked data)
 
 Experimental Clojure library and CLI tool for translation between different linked data modeling frameworks/formats.
 
@@ -11,7 +11,7 @@ The different frameworks/formats under consideration:
 
 ## Usage
 
-FIXME
+TODO
 
 ## License
 
