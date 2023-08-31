@@ -42,7 +42,7 @@
       (apply merge-with merge)
       (reduce-kv (fn [m k v] (assoc m k (type-children v (k typemap)))) {})))
 
-(defn get-enum "Use name of enum set in range to get the set of enum values"
+(defn get-enum "Use range reference to get the set of valid enum values"
   [range]
   (map name (keys (get-in @graph [:enums (keyword range) :permissible_values]))))
 
@@ -105,22 +105,46 @@
      (sms-deps entity)
      (sms-rules entity)))
 
-(defn to-vals "Create a flat map of enum values"
-  [g]
+(defn get-vals [g]
   (->>(apply merge (map #((val %) :permissible_values) (g :enums)))
-      (map (fn [m] (let [[k v] m] [(name k) v]))))) ; deal w/ spaces in vals
+      (map (fn [m] (let [[k v] m] [(name k) v])))
+      (mapv first))) ; deal w/ spaces in vals
 
-(defn graph-map
-  "Create graph for source directory while realizing and consolidating enum values:
-  those defined more formally under enums as well as defined within slots"
+(defn add-vals [g vals]
+  (->>(cset/difference (set (mapcat #((val %) :enum_range) (g :slots))) (set (get-vals g)))
+      (map (fn [v] [v {}]))
+      (into vals)
+      (assoc g :vals)))
+
+(defn class-lineage
+  "Return the main class lineage/backbone for class as class -> parent -> ancestor ..."
+  [class class-map]
+  (loop [class-id (keyword class)
+         lineage [class]]
+    (let [next (get class-map class-id)]
+      (if (nil? next)
+        lineage
+        (recur (:is_a next) (conj lineage (:is_a next)))))))
+
+(defn inherited-props "Get inherited props according to class lineage"
+  [class class-map]
+  (let [[id props] class
+        lineage (reverse (mapv keyword (class-lineage id class-map)))] ; reverse so inheriteds appear first
+    (distinct (mapcat #(:slots (second %)) (select-keys class-map lineage)))))
+
+(defn subclass [class class-map]
+  (assoc-in class [1 :slots] (inherited-props class class-map)))
+
+(defn graph-map "Build graph from source directory, realizing values from slots and inherited slots"
   [dir]
-  (let [g (dir-to-map dir) vals (to-vals g)]
-    (->>(cset/difference (set (mapcat #((val %) :enum_range) (g :slots))) (set (mapv first vals)))
-        (map (fn [v] [v {}]))
-        (into vals)
-        (assoc g :vals))))
+  (let [g (dir-to-map dir)
+        classes (g :classes)
+        classes-x (map #(subclass % classes)  classes)]
+    (->(add-vals g (get-vals g))
+       (assoc        :classes classes-x))))
 
-(defn output-graph [g] (with-context (map derive-entity (mapcat val g))))
+(defn output-graph [g]
+  (with-context (map derive-entity (mapcat val g))))
 
 (defn write-file [opts]
   (let [{:keys [dir out]} opts]
