@@ -1,7 +1,6 @@
 /target
 /classes
 /checkouts
-modules
 profiles.clj
 pom.xml
 pom.xml.asc
@@ -13,3 +12,7 @@ pom.xml.asc
 .hg/
 .clj-kondo
 .lsp
+
+# Tests
+modules
+model.jsonld
