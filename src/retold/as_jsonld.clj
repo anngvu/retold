@@ -105,15 +105,15 @@
      (sms-deps entity)
      (sms-rules entity)))
 
-(defn get-vals [g]
+(defn get-vals "Get vals defined in enums"
+  [g]
   (->>(apply merge (map #((val %) :permissible_values) (g :enums)))
       (map (fn [m] (let [[k v] m] [(name k) v]))) ; deal with spaces in vals
       (mapv first)))
 
-(defn add-vals [g vals]
-  (->>(cset/difference (set (mapcat #((val %) :enum_range) (g :slots))) (set (get-vals g)))
+(defn add-vals [g]
+  (->>(cset/union (set (mapcat #((val %) :enum_range) (g :slots))) (set (get-vals g)))
       (map (fn [v] [v {}]))
-      (into vals)
       (assoc g :vals)))
 
 (defn class-lineage
@@ -128,7 +128,7 @@
 
 (defn inherited-props "Get inherited props according to class lineage"
   [class class-map]
-  (let [[id props] class
+  (let [[id _] class
         lineage (reverse (mapv keyword (class-lineage id class-map)))] ; reverse so inheriteds appear first
     (distinct (mapcat #(:slots (second %)) (select-keys class-map lineage)))))
 
@@ -140,7 +140,7 @@
   (let [g (dir-to-map dir)
         classes (g :classes)
         classes-x (map #(subclass % classes)  classes)]
-    (->(add-vals g (get-vals g))
+    (->(add-vals g)
        (assoc :classes classes-x))))
 
 (defn output-graph [g]
