@@ -42,7 +42,8 @@
       (apply merge-with merge)
       (reduce-kv (fn [m k v] (assoc m k (type-children v (k typemap)))) {})))
 
-(defn get-enum [range]
+(defn get-enum "Use name of enum set in range to get the set of enum values"
+  [range]
   (map name (keys (get-in @graph [:enums (keyword range) :permissible_values]))))
 
 (defn id-refs [name-coll]
@@ -104,11 +105,14 @@
      (sms-deps entity)
      (sms-rules entity)))
 
-(defn to-vals [g]
+(defn to-vals "Create a flat map of enum values"
+  [g]
   (->>(apply merge (map #((val %) :permissible_values) (g :enums)))
       (map (fn [m] (let [[k v] m] [(name k) v]))))) ; deal w/ spaces in vals
 
-(defn graph-map "Create graph given source directory, realizing vals as needed"
+(defn graph-map
+  "Create graph for source directory while realizing and consolidating enum values:
+  those defined more formally under enums as well as defined within slots"
   [dir]
   (let [g (dir-to-map dir) vals (to-vals g)]
     (->>(cset/difference (set (mapcat #((val %) :enum_range) (g :slots))) (set (mapv first vals)))
