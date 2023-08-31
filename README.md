@@ -15,9 +15,9 @@ This is expected to be run as a command-line tool with [babashka](https://babash
 
 ### LinkML -> schematic
 
-Example with LinkML YAML files in a directory called 'modules': 
+Example of translating LinkML YAML files in a directory called 'modules': 
 
-`bb ./retold/retold as-jsonld --dir modules --out model.jsonld` 
+`bb ./retold as-jsonld --dir modules --out model.jsonld` 
 
 ### schematic -> LinkML
 
