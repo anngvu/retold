@@ -11,6 +11,20 @@ The different frameworks/formats under consideration:
 
 ## Usage
 
+This is expected to be run as a command-line tool with [babashka](https://babashka.org/).
+
+### LinkML -> schematic
+
+Example with LinkML YAML files in a directory called 'modules': 
+
+`bb ./retold/retold as-jsonld --dir modules --out model.jsonld` 
+
+### schematic -> LinkML
+
+TODO
+
+### LinkML -> OTTR 
+
 TODO
 
 ## License
