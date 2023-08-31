@@ -33,7 +33,7 @@
 
 (defn list-files [dir] (map str (filter #(.isFile %) (file-seq (io/file dir)))))
 
-(defn type-children "Add type to a collection of child entities"
+(defn type-children "Add/pass down type to elements in collection using typemap"
   [children type]
   (reduce-kv (fn [m k v] (assoc m k (assoc v :type type))) {} children))
 
