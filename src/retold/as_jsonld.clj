@@ -141,7 +141,7 @@
         classes (g :classes)
         classes-x (map #(subclass % classes)  classes)]
     (->(add-vals g (get-vals g))
-       (assoc        :classes classes-x))))
+       (assoc :classes classes-x))))
 
 (defn output-graph [g]
   (with-context (map derive-entity (mapcat val g))))
