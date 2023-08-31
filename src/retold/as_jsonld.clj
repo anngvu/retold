@@ -107,8 +107,8 @@
 
 (defn get-vals [g]
   (->>(apply merge (map #((val %) :permissible_values) (g :enums)))
-      (map (fn [m] (let [[k v] m] [(name k) v])))
-      (mapv first))) ; deal w/ spaces in vals
+      (map (fn [m] (let [[k v] m] [(name k) v]))) ; deal with spaces in vals
+      (mapv first)))
 
 (defn add-vals [g vals]
   (->>(cset/difference (set (mapcat #((val %) :enum_range) (g :slots))) (set (get-vals g)))
