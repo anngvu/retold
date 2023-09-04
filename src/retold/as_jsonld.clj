@@ -124,7 +124,7 @@
     (let [next (get class-map class-id)]
       (if (nil? next)
         lineage
-        (recur (:is_a next) (conj lineage (:is_a next)))))))
+        (recur (keyword (:is_a next)) (conj lineage (:is_a next)))))))
 
 (defn inherited-props "Get inherited props according to class lineage"
   [class class-map]
