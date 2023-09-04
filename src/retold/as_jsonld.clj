@@ -139,7 +139,7 @@
   [dir]
   (let [g (dir-to-map dir)
         classes (g :classes)
-        classes-x (map #(subclass % classes)  classes)]
+        classes-x (map #(subclass % classes) classes)]
     (->(add-vals g)
        (assoc :classes classes-x))))
 
