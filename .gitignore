@@ -12,3 +12,7 @@ pom.xml.asc
 .hg/
 .clj-kondo
 .lsp
+
+# Tests
+modules
+model.jsonld
