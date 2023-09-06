@@ -22,12 +22,12 @@
 
 (def classes (filter #(not (nil? (:sms:requiresDependency %))) g))
 
-(def class-export {:classes (into {} (map #(format-class %) classes))})
-
 (defn format-class [idx]
   {(keyword (:rdfs:label idx))
    {:is_a (first (map new-id (:rdfs:subClassOf idx)))
     :slots (map new-id (:sms:requiresDependency idx)) }})
+
+(def class-export {:classes (into {} (map #(format-class %) classes))})
 
 (def used-props
   (->>(mapcat :sms:requiresDependency classes)
@@ -55,7 +55,7 @@
    :domain (:id (first (:rdfs:subClassOf x)))
    })
 
-(defn eyanum-stats
+(defn enum-stats
   "Show enums reused more than n times"
   [n]
   (filter #(> (count (:id (second %))) n) enum-sets))
