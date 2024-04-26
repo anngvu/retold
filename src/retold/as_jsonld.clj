@@ -71,9 +71,11 @@
     (if deps (assoc derived "sms:requiresDependency" (id-refs (str/split deps #","))) derived)))
 
 (defn sms-rules [derived entity]
-  (let [[_ props] entity]
-    (if-let [rules (get-in props [:annotations :validationRules])]
-      (assoc derived "sms:validationRules" (list rules)) derived)))
+  (let [[_ props] entity
+        rules (get-in props [:annotations :validationRules])]
+    (if rules
+      (assoc derived "sms:validationRules" (conj '() rules))
+      (assoc derived "sms:validationRules" '()))))
 
 (defn base-entity [entity]
   (let [[k props] entity]
