@@ -73,7 +73,9 @@
 (defn sms-rules [derived entity]
   (let [[_ props] entity
         rules (get-in props [:annotations :validationRules])]
-    (assoc derived "sms:validationRules" (conj [] rules))))
+    (if rules
+      (assoc derived "sms:validationRules" (conj '() rules))
+      (assoc derived "sms:validationRules" '()))))
 
 (defn base-entity [entity]
   (let [[k props] entity]
