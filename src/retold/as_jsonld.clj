@@ -77,6 +77,14 @@
       (assoc derived "sms:validationRules" (conj '() rules))
       (assoc derived "sms:validationRules" '()))))
 
+(defn slots-vs-attributes
+  "NOTE: attributes *must* be evaluated first "
+  [props]
+  (cond
+    (props :attributes) (id-refs (map name (keys (props :attributes))))
+    (props :slots) (id-refs (props :slots))
+    :else []))
+
 (defn base-entity [entity]
   (let [[k props] entity]
     {"@id" (make-id (name k))
@@ -95,7 +103,7 @@
 (defmethod derive-entity :class [entity]
   (let [[_ props] entity]
     (->(base-entity entity)
-       (assoc "sms:requiresDependency" (id-refs (get props :slots)))
+       (assoc "sms:requiresDependency" (slots-vs-attributes props))
        (assoc "sms:requiresComponent" (get-in props [:annotations :requiresComponent]))
        (assoc "rdfs:subClassOf" (id-refs (if-let [subclass (get props :is_a)] (list subclass) ()))))))
 
@@ -137,7 +145,8 @@
 (defn subclass [class class-map]
   (assoc-in class [1 :slots] (inherited-props class class-map)))
 
-(defn graph-map "Build graph from source directory, realizing values from slots and inherited slots"
+(defn graph-map
+  "Build graph from source directory, realizing values from slots and inherited slots"
   [dir]
   (let [g (dir-to-map dir)
         classes (g :classes)
