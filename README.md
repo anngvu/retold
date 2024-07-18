@@ -1,6 +1,7 @@
 # retold (retelling of linked data)
 
 Experimental Clojure library and CLI tool for translation between different linked data modeling frameworks/formats.
+A "retelling" often implies that some details can be lost because no exact translation is possible. 
 
 The different frameworks/formats under consideration:
 
