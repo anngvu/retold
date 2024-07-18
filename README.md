@@ -3,11 +3,11 @@
 Experimental Clojure library and CLI util for translation between different formats expected by different linked data tools/frameworks.
 A "retelling" often implies that some details can be lost because no exact translation is possible. 
 
-The different frameworks/formats under consideration:
+The different frameworks (formats) under consideration:
 
-- [Linked Data Modeling Language (LinkML)](https://github.com/linkml/linkml)
-- [schematic](https://github.com/Sage-Bionetworks/schematic/) (schema.org json-ld)
-- [Reasonable Ontology Templates (OTTR)](https://ottr.xyz/)
+- [Linked Data Modeling Language (LinkML)](https://github.com/linkml/linkml) (YAML)
+- [schematic](https://github.com/Sage-Bionetworks/schematic/) (JSON-LD)
+- [Reasonable Ontology Templates (OTTR)](https://ottr.xyz/) (multiple)
 
 
 ## Usage
