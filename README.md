@@ -1,6 +1,6 @@
 # retold (retelling of linked data)
 
-Experimental Clojure library and CLI tool for translation between different linked data modeling frameworks/formats.
+Experimental Clojure library and CLI util for translation between different formats expected by different linked data tools/frameworks.
 A "retelling" often implies that some details can be lost because no exact translation is possible. 
 
 The different frameworks/formats under consideration:
@@ -14,19 +14,11 @@ The different frameworks/formats under consideration:
 
 This is expected to be run as a command-line tool with [babashka](https://babashka.org/).
 
-### LinkML -> schematic
+### Paths
 
-Example of translating LinkML YAML files in a directory called 'modules': 
-
-`bb ./retold as-jsonld --dir modules --out model.jsonld` 
-
-### schematic -> LinkML
-
-TODO
-
-### LinkML -> OTTR 
-
-TODO
+- [x] (limited) LinkML -> schematic: `bb ./retold as-jsonld --dir modules --out model.jsonld` 
+- [ ] schematic -> LinkML
+- [ ] LinkML -> OTTR 
 
 ## License
 
