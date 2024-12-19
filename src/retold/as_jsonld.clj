@@ -39,8 +39,8 @@
 
 (defn dir-to-map [dir]
  (->> (mapv read-yaml (list-files dir))
+      (mapv #(select-keys % [:classes :enums :slots]))
       (apply merge-with merge)
-      (#(select-keys % [:classes :enums :slots]))
       (reduce-kv (fn [m k v] (assoc m k (type-children v (k typemap)))) {})))
 
 (defn get-enum "Use range reference to get the set of valid enum values"
