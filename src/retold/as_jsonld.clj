@@ -43,6 +43,14 @@
       (apply merge-with merge)
       (reduce-kv (fn [m k v] (assoc m k (type-children v (k typemap)))) {})))
 
+(def primitive-types
+  "Set of LinkML primitive types that should not be looked up as enums"
+  #{"float" "integer" "string" "boolean" "date" "datetime" "time" "uri" "uriorcurie" "double" "decimal"})
+
+(defn primitive-type? [range-val]
+  "Check if the range value is a primitive type"
+  (contains? primitive-types (str range-val)))
+
 (defn get-enum "Use range reference to get the set of valid enum values"
   [range]
   (map name (keys (get-in @graph [:enums (keyword range) :permissible_values]))))
@@ -59,11 +67,13 @@
   (id-refs (flatten (map #(get-enum (:range %)) any_of))))
 
 (defn sms-range [derived entity]
-  (let [[_ props] entity]
+  (let [[_ props] entity
+        range-val (get props :range)]
     (cond
       (get props :enum_range) (assoc derived "schema:rangeIncludes" (id-refs (props :enum_range)))
       (get props :any_of) (assoc derived "schema:rangeIncludes" (expand-union-range (props :any_of)))
-      (get props :range) (assoc derived "schema:rangeIncludes" (id-refs (get-enum (props :range))))
+      (and range-val (primitive-type? range-val)) derived
+      range-val (assoc derived "schema:rangeIncludes" (id-refs (get-enum range-val)))
       :else derived)))
 
 (defn sms-deps [derived entity]
